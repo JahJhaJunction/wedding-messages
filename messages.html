@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Our Wedding Messages 💕</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: 'Lato', system-ui, sans-serif; color: #333;
+      background: linear-gradient(135deg, #fce4ec, #fff 40%, #f3e5f5);
+      min-height: 100vh; padding: 2rem 1rem;
+    }
+    header { text-align: center; margin-bottom: 2rem; }
+    h1 { font-family: 'Great Vibes', cursive; font-weight: 400; font-size: 3rem; color: #c2185b; margin: 0; }
+    #count { color: #666; }
+    #search {
+      display: block; margin: 1rem auto 0; width: 100%; max-width: 360px;
+      font: inherit; padding: 0.6rem 0.9rem; border: 1px solid #ddd; border-radius: 999px;
+    }
+    .grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; gap: 1.25rem;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    .note {
+      background: #fff; border-radius: 16px; padding: 1.25rem 1.4rem;
+      box-shadow: 0 4px 18px rgba(194, 24, 91, 0.12);
+      border-top: 4px solid #f48fb1;
+    }
+    .note p { white-space: pre-wrap; line-height: 1.55; margin: 0 0 1rem; }
+    .note .who { font-weight: 700; color: #c2185b; }
+    .note time { display: block; font-size: 0.8rem; color: #666; margin-top: 0.2rem; }
+    .status { text-align: center; color: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Messages from our loved ones</h1>
+    <div id="count" aria-live="polite">Loading…</div>
+    <label for="search" class="sr-only" style="position:absolute;left:-9999px">Search messages</label>
+    <input id="search" type="search" placeholder="Search by name or message…" />
+  </header>
+  <main class="grid" id="grid"></main>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const count = document.getElementById('count');
+    const search = document.getElementById('search');
+    let all = [];
+
+    function render(list) {
+      grid.replaceChildren();
+      for (const m of list) {
+        const card = document.createElement('article');
+        card.className = 'note';
+        const p = document.createElement('p');
+        p.textContent = m.message; // textContent: guest input is never parsed as HTML
+        const who = document.createElement('div');
+        who.className = 'who';
+        who.textContent = '— ' + m.name;
+        const time = document.createElement('time');
+        time.dateTime = m.createdAt;
+        time.textContent = new Date(m.createdAt).toLocaleString();
+        card.append(p, who, time);
+        grid.append(card);
+      }
+      count.textContent = list.length === all.length
+        ? `${all.length} message${all.length === 1 ? '' : 's'} 💕`
+        : `${list.length} of ${all.length} messages`;
+    }
+
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      render(!q ? all : all.filter(m =>
+        m.name.toLowerCase().includes(q) || m.message.toLowerCase().includes(q)));
+    });
+
+    // Cache-bust: GitHub Pages caches files for ~10 minutes
+    fetch(`messages.json?t=${Date.now()}`)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(data => {
+        all = data.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        render(all);
+      })
+      .catch(() => { count.textContent = 'Could not load messages. Try refreshing.'; });
+  </script>
+</body>
+</html>

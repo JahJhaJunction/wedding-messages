@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Leave us a message 💍</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --accent: #c2185b; --card: rgba(255, 255, 255, 0.88); }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: 'Lato', system-ui, sans-serif;
+      color: #333;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      overflow-x: hidden;
+      /* Fallback if the photo is missing */
+      background: linear-gradient(135deg, #f8bbd0, #fce4ec 50%, #e1bee7);
+    }
+
+    /* Background photo with a slow "Ken Burns" zoom */
+    .bg {
+      position: fixed; inset: 0; z-index: -2;
+      background: url('assets/couple.jpg') center / cover no-repeat;
+      animation: kenburns 30s ease-in-out infinite alternate;
+    }
+    .bg::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.45));
+    }
+    @keyframes kenburns {
+      from { transform: scale(1); }
+      to   { transform: scale(1.12) translate(-2%, -2%); }
+    }
+
+    /* Floating hearts */
+    .hearts { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+    .heart {
+      position: absolute; bottom: -40px;
+      font-size: var(--size); opacity: 0.85;
+      animation: float var(--dur) linear forwards;
+    }
+    @keyframes float {
+      to { transform: translateY(-110vh) translateX(var(--drift)) rotate(25deg); opacity: 0; }
+    }
+
+    .card {
+      width: 100%; max-width: 440px;
+      background: var(--card);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border-radius: 20px;
+      padding: 1.75rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    }
+    h1 {
+      font-family: 'Great Vibes', cursive; font-weight: 400;
+      font-size: 2.6rem; text-align: center; margin: 0; color: var(--accent);
+    }
+    .sub { text-align: center; margin: 0.25rem 0 1.25rem; color: #555; }
+    label { display: block; font-weight: 700; margin: 0.75rem 0 0.35rem; }
+    input, textarea {
+      width: 100%; font: inherit; font-size: 16px; /* 16px prevents iOS zoom */
+      padding: 0.7rem 0.8rem; border: 1px solid #ddd; border-radius: 10px; background: #fff;
+    }
+    input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+    textarea { min-height: 130px; resize: vertical; }
+    .counter { text-align: right; font-size: 0.8rem; color: #666; }
+    /* Honeypot field: hidden from humans, bots tend to fill it */
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    button {
+      width: 100%; margin-top: 1rem; padding: 0.85rem;
+      font: inherit; font-weight: 700; font-size: 1.05rem;
+      color: #fff; background: var(--accent);
+      border: 0; border-radius: 999px; cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    button:focus-visible { outline: 3px solid #000; outline-offset: 2px; }
+    .error { color: #b00020; min-height: 1.2em; margin: 0.5rem 0 0; text-align: center; }
+    .success { text-align: center; }
+    .success:focus { outline: none; }
+    .success .big { font-size: 3rem; }
+    [hidden] { display: none !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bg { animation: none; }
+      .hearts { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="hearts" id="hearts" aria-hidden="true"></div>
+
+  <main class="card">
+    <!-- TODO: put your names here -->
+    <h1>Rajat &amp; Partner</h1>
+    <p class="sub">Thank you for celebrating with us! Leave us a note we'll treasure forever.</p>
+
+    <form id="form" novalidate>
+      <label for="name">Your name</label>
+      <input id="name" name="name" maxlength="80" autocomplete="name" required />
+
+      <label for="message">Your message</label>
+      <textarea id="message" name="message" maxlength="2000" required aria-describedby="counter"></textarea>
+      <div class="counter" id="counter">0 / 2000</div>
+
+      <div class="hp" aria-hidden="true">
+        <label for="website">Website</label>
+        <input id="website" name="website" tabindex="-1" autocomplete="off" />
+      </div>
+
+      <button type="submit" id="send">Send with love 💌</button>
+      <p class="error" id="error" role="alert"></p>
+    </form>
+
+    <section class="success" id="success" hidden tabindex="-1">
+      <div class="big" aria-hidden="true">💕</div>
+      <h2>Submitted successfully!</h2>
+      <p>Thank you, <span id="thanks-name"></span>. Your message means the world to us.</p>
+      <button type="button" id="again">Send another message</button>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = 'https://wedding-messages.jahjhajunction.workers.dev';
+    const SEND_LABEL = 'Send with love 💌';
+
+    const $ = (id) => document.getElementById(id);
+    const form = $('form'), nameEl = $('name'), msgEl = $('message'), hpEl = $('website');
+    const sendBtn = $('send'), errorEl = $('error'), counter = $('counter');
+    const success = $('success'), thanksName = $('thanks-name'), hearts = $('hearts');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    msgEl.addEventListener('input', () => {
+      counter.textContent = `${msgEl.value.length} / 2000`;
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.textContent = '';
+      const name = nameEl.value.trim();
+      const message = msgEl.value.trim();
+      if (!name || !message) {
+        errorEl.textContent = 'Please add your name and a message.';
+        (name ? msgEl : nameEl).focus();
+        return;
+      }
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending…';
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, message, website: hpEl.value }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+
+        thanksName.textContent = name; // textContent: never inject guest input as HTML
+        form.hidden = true;
+        success.hidden = false;
+        success.focus();
+        burst();
+      } catch (err) {
+        errorEl.textContent = err instanceof TypeError
+          ? 'Network issue — please check your connection and try again.'
+          : err.message;
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = SEND_LABEL;
+      }
+    });
+
+    $('again').addEventListener('click', () => {
+      form.reset();
+      counter.textContent = '0 / 2000';
+      success.hidden = true;
+      form.hidden = false;
+      nameEl.focus();
+    });
+
+    function spawnHeart() {
+      const h = document.createElement('span');
+      h.className = 'heart';
+      h.textContent = ['❤️', '💕', '💖', '🤍'][Math.floor(Math.random() * 4)];
+      h.style.left = Math.random() * 100 + 'vw';
+      h.style.setProperty('--size', 14 + Math.random() * 22 + 'px');
+      h.style.setProperty('--dur', 6 + Math.random() * 6 + 's');
+      h.style.setProperty('--drift', Math.random() * 120 - 60 + 'px');
+      hearts.appendChild(h);
+      h.addEventListener('animationend', () => h.remove());
+    }
+    function burst() {
+      if (reduceMotion) return;
+      for (let i = 0; i < 25; i++) setTimeout(spawnHeart, i * 40);
+    }
+    if (!reduceMotion) setInterval(spawnHeart, 700);
+  </script>
+</body>
+</html>

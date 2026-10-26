@@ -1,0 +1,13 @@
+name = "wedding-messages"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+GITHUB_OWNER = "JahJhaJunction"
+GITHUB_REPO = "wedding-messages"
+GITHUB_BRANCH = "main"
+FILE_PATH = "messages.json"
+# Exact origin of your GitHub Pages site (scheme + host, no path, no trailing slash)
+ALLOWED_ORIGIN = "https://jahjhajunction.github.io"
+
+# GITHUB_TOKEN is a secret — set it with: npx wrangler secret put GITHUB_TOKEN
